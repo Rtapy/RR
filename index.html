@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>مبلغ به حروف | تبدیل عدد به تومان</title>
+<meta name="description" content="مبلغ را به عدد وارد کنید، بلافاصله به‌صورت خوانا به حروف و به تومان نمایش داده می‌شود.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&family=Noto+Naskh+Arabic:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#ECEFDF;
+    --paper-deep:#E2E6D2;
+    --line:#C7D0B3;
+    --ink:#1E2A38;
+    --ink-soft:#5B6B72;
+    --brass:#A9772F;
+    --brass-soft:#C99A52;
+    --stamp:#8C3A34;
+    --bg-top:#161D26;
+    --bg-bottom:#0F151C;
+    --radius:18px;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0;
+    padding:0;
+    min-height:100%;
+  }
+
+  body{
+    font-family:"Vazirmatn", sans-serif;
+    background:
+      radial-gradient(circle at 20% -10%, #232E3A 0%, transparent 55%),
+      linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:28px 16px;
+  }
+
+  @media (prefers-reduced-motion: no-preference){
+    .cheque{ animation: rise .55s cubic-bezier(.22,.8,.28,1) both; }
+    .words-output.updated{ animation: settle .28s ease; }
+  }
+  @keyframes rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:translateY(0); } }
+  @keyframes settle{ from{ opacity:.35; transform:translateY(3px); } to{ opacity:1; transform:translateY(0); } }
+
+  .page{
+    width:100%;
+    max-width:440px;
+  }
+
+  .eyebrow-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    padding:0 6px 14px;
+  }
+  .eyebrow-row h1{
+    font-size:15px;
+    font-weight:600;
+    color:#D9DCC9;
+    letter-spacing:.02em;
+    margin:0;
+  }
+  .eyebrow-row span{
+    font-size:12px;
+    color:#7B8794;
+  }
+
+  .cheque{
+    position:relative;
+    background:var(--paper);
+    border-radius:var(--radius);
+    border:1px solid var(--line);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.5) inset,
+      0 24px 48px -20px rgba(0,0,0,.55);
+    overflow:hidden;
+  }
+
+  .cheque::before{
+    /* faint guilloché engraving texture, signature element */
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    opacity:.05;
+    background:
+      repeating-linear-gradient(35deg, var(--brass) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(-35deg, var(--ink) 0 1px, transparent 1px 9px);
+    mix-blend-mode:multiply;
+  }
+
+  .seal{
+    position:absolute;
+    top:16px;
+    left:16px;
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    border:1.5px dashed var(--brass-soft);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transform:rotate(-9deg);
+    color:var(--brass);
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:.03em;
+    text-align:center;
+    line-height:1.15;
+    background:radial-gradient(circle, rgba(169,119,47,.07), transparent 70%);
+  }
+
+  .cheque-top{
+    position:relative;
+    padding:26px 22px 20px;
+  }
+
+  .field-label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+  }
+
+  .unit-toggle{
+    display:inline-flex;
+    background:var(--paper-deep);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:3px;
+    margin-inline-start:8px;
+    vertical-align:middle;
+  }
+  .unit-toggle button{
+    border:none;
+    background:transparent;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    padding:6px 14px;
+    border-radius:999px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition:background .18s ease, color .18s ease;
+  }
+  .unit-toggle button.active{
+    background:var(--ink);
+    color:var(--paper);
+  }
+  .unit-toggle button:focus-visible,
+  .amount-box:focus-within,
+  input:focus-visible{
+    outline:2px solid var(--brass);
+    outline-offset:2px;
+  }
+
+  .amount-box{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--white, #FBFBF5);
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+  }
+  .amount-box .currency-mark{
+    font-size:13px;
+    color:var(--brass);
+    font-weight:700;
+    flex-shrink:0;
+  }
+  #amountInput{
+    flex:1;
+    min-width:0;
+    border:none;
+    background:transparent;
+    font-family:"Vazirmatn", sans-serif;
+    font-size:clamp(22px, 6vw, 28px);
+    font-weight:700;
+    color:var(--ink);
+    text-align:left;
+    direction:ltr;
+    letter-spacing:.01em;
+    padding:0;
+  }
+  #amountInput::placeholder{
+    color:#B7BEA6;
+    font-weight:500;
+  }
+  #amountInput:focus{ outline:none; }
+
+  .clear-btn{
+    border:none;
+    background:var(--paper-deep);
+    color:var(--ink-soft);
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    font-size:13px;
+    line-height:1;
+    cursor:pointer;
+    flex-shrink:0;
+    display:none;
+  }
+  .clear-btn.show{ display:block; }
+
+  .perforation{
+    position:relative;
+    height:0;
+    border-top:1.5px dashed var(--line);
+    margin:2px 0;
+  }
+  .perforation::before,
+  .perforation::after{
+    content:"";
+    position:absolute;
+    top:-8px;
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    background:var(--bg-bottom);
+  }
+  .perforation::before{ left:-8px; }
+  .perforation::after{ right:-8px; }
+
+  .cheque-bottom{
+    position:relative;
+    padding:20px 22px 26px;
+  }
+
+  .words-output{
+    margin:10px 0 0;
+    font-family:"Noto Naskh Arabic", "Vazirmatn", serif;
+    font-size:clamp(20px, 5.6vw, 25px);
+    font-weight:700;
+    line-height:1.9;
+    color:var(--ink);
+  }
+  .words-output.placeholder{
+    font-family:"Vazirmatn", sans-serif;
+    font-weight:500;
+    font-size:15px;
+    color:#8A9184;
+  }
+  .words-output .toman{
+    color:var(--brass);
+  }
+
+  .note{
+    max-width:440px;
+    margin:16px 6px 0;
+    font-size:11.5px;
+    line-height:1.9;
+    color:#7B8794;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="eyebrow-row">
+    <h1>مبلغ به حروف</h1>
+    <span>تبدیل آنی عدد به تومان</span>
+  </div>
+
+  <div class="cheque">
+    <div class="seal">تومان<br>خوان</div>
+
+    <div class="cheque-top">
+      <label class="field-label" for="amountInput">
+        مبلغ به عدد
+        <span class="unit-toggle" role="group" aria-label="واحد ورودی">
+          <button type="button" id="unitRial" class="active" aria-pressed="true">ریال</button>
+          <button type="button" id="unitToman" aria-pressed="false">تومان</button>
+        </span>
+      </label>
+
+      <div class="amount-box">
+        <span class="currency-mark" id="unitMark">﷼</span>
+        <input id="amountInput" type="text" inputmode="numeric" autocomplete="off"
+               placeholder="مثلاً ۲,۵۰۰,۰۰۰" aria-label="مبلغ به عدد">
+        <button type="button" class="clear-btn" id="clearBtn" aria-label="پاک کردن">✕</button>
+      </div>
+    </div>
+
+    <div class="perforation" aria-hidden="true"></div>
+
+    <div class="cheque-bottom">
+      <span class="field-label">مبلغ به حروف</span>
+      <p class="words-output placeholder" id="wordsOutput">مبلغ را وارد کنید</p>
+    </div>
+  </div>
+
+  <p class="note">
+    اگر واحد ورودی «ریال» باشد، عدد بر ۱۰ تقسیم و معادل تومان آن به حروف نوشته می‌شود؛
+    با انتخاب «تومان»، همان عدد مستقیم به حروف تبدیل می‌شود.
+  </p>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var input      = document.getElementById('amountInput');
+  var clearBtn   = document.getElementById('clearBtn');
+  var wordsEl    = document.getElementById('wordsOutput');
+  var unitMark   = document.getElementById('unitMark');
+  var unitRialBtn  = document.getElementById('unitRial');
+  var unitTomanBtn = document.getElementById('unitToman');
+
+  var unit = 'rial'; // 'rial' | 'toman'
+
+  var FA_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
+  var AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+
+  function toLatinDigits(str){
+    return str.replace(/[۰-۹٠-٩]/g, function(ch){
+      var i = FA_DIGITS.indexOf(ch);
+      if(i > -1) return String(i);
+      i = AR_DIGITS.indexOf(ch);
+      if(i > -1) return String(i);
+      return ch;
+    });
+  }
+
+  function toPersianDigits(str){
+    return String(str).replace(/[0-9]/g, function(d){ return FA_DIGITS[d]; });
+  }
+
+  function groupDigits(latinDigitsStr){
+    // insert comma every 3 digits from the right
+    return latinDigitsStr.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
+  // ---- Persian number-to-words ----
+  var ONES = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه'];
+  var TEENS = ['ده', 'یازده', 'دوازده', 'سیزده', 'چهارده', 'پانزده', 'شانزده', 'هفده', 'هجده', 'نوزده'];
+  var TENS = ['', '', 'بیست', 'سی', 'چهل', 'پنجاه', 'شصت', 'هفتاد', 'هشتاد', 'نود'];
+  var HUNDREDS = ['', 'صد', 'دویست', 'سیصد', 'چهارصد', 'پانصد', 'ششصد', 'هفتصد', 'هشتصد', 'نهصد'];
+  var SCALES = ['', 'هزار', 'میلیون', 'میلیارد', 'تریلیون', 'کوادریلیون'];
+
+  function threeDigitToWords(n){
+    var words = [];
+    var h = Math.floor(n / 100);
+    var rest = n % 100;
+    if(h) words.push(HUNDREDS[h]);
+    if(rest > 0){
+      if(rest < 10){
+        words.push(ONES[rest]);
+      } else if(rest < 20){
+        words.push(TEENS[rest - 10]);
+      } else {
+        var t = Math.floor(rest / 10);
+        var o = rest % 10;
+        words.push(TENS[t]);
+        if(o) words.push(ONES[o]);
+      }
+    }
+    return words.join(' و ');
+  }
+
+  function numberToWordsFa(num){
+    if(num === 0) return 'صفر';
+    var groups = [];
+    var n = num;
+    while(n > 0){
+      groups.push(n % 1000);
+      n = Math.floor(n / 1000);
+    }
+    var parts = [];
+    for(var i = groups.length - 1; i >= 0; i--){
+      if(groups[i] === 0) continue;
+      var gw = threeDigitToWords(groups[i]);
+      if(SCALES[i]) gw += ' ' + SCALES[i];
+      parts.push(gw);
+    }
+    return parts.join(' و ');
+  }
+
+  var MAX_SAFE_DIGITS = 15; // keeps us within Number safety and the scale list above
+
+  function setUnit(next){
+    unit = next;
+    var rialActive = unit === 'rial';
+    unitRialBtn.classList.toggle('active', rialActive);
+    unitTomanBtn.classList.toggle('active', !rialActive);
+    unitRialBtn.setAttribute('aria-pressed', String(rialActive));
+    unitTomanBtn.setAttribute('aria-pressed', String(!rialActive));
+    unitMark.textContent = rialActive ? '﷼' : 'ت';
+    render();
+  }
+
+  function render(){
+    var latin = toLatinDigits(input.value).replace(/[^0-9]/g, '');
+
+    // live comma-grouped, Persian-digit formatting inside the input
+    var grouped = groupDigits(latin);
+    var displayVal = toPersianDigits(grouped);
+    if(input.value !== displayVal){
+      input.value = displayVal;
+    }
+    clearBtn.classList.toggle('show', latin.length > 0);
+
+    if(latin.length === 0){
+      wordsEl.textContent = 'مبلغ را وارد کنید';
+      wordsEl.classList.add('placeholder');
+      return;
+    }
+
+    if(latin.length > MAX_SAFE_DIGITS){
+      wordsEl.textContent = 'عدد وارد‌شده بیش از حد بزرگ است';
+      wordsEl.classList.remove('placeholder');
+      return;
+    }
+
+    var num = parseInt(latin, 10);
+    var tomanValue = unit === 'rial' ? Math.floor(num / 10) : num;
+
+    var words = numberToWordsFa(tomanValue);
+    wordsEl.classList.remove('placeholder');
+    wordsEl.innerHTML = words + ' <span class="toman">تومان</span>';
+    wordsEl.classList.remove('updated');
+    void wordsEl.offsetWidth; // restart animation
+    wordsEl.classList.add('updated');
+  }
+
+  input.addEventListener('input', render);
+  clearBtn.addEventListener('click', function(){
+    input.value = '';
+    input.focus();
+    render();
+  });
+  unitRialBtn.addEventListener('click', function(){ setUnit('rial'); });
+  unitTomanBtn.addEventListener('click', function(){ setUnit('toman'); });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
